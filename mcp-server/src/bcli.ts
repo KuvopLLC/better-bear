@@ -130,11 +130,13 @@ function classifyError(
   return new BcliError(stderr.trim() || "bcli command failed", stderr, exitCode);
 }
 
-export function execBcli(
+export async function execBcli(
   args: string[],
 ): Promise<{ stdout: string; stderr: string }> {
-  return new Promise(async (resolve, reject) => {
-    const bcliPath = await findBcli();
+  // Resolve the path before building the Promise: a throw inside an async
+  // executor escapes as an unhandled rejection and kills the server.
+  const bcliPath = await findBcli();
+  return new Promise((resolve, reject) => {
     execFile(
       bcliPath,
       args,
@@ -150,12 +152,12 @@ export function execBcli(
   });
 }
 
-export function execBcliWithStdin(
+export async function execBcliWithStdin(
   args: string[],
   input: string,
 ): Promise<{ stdout: string; stderr: string }> {
-  return new Promise(async (resolve, reject) => {
-    const bcliPath = await findBcli();
+  const bcliPath = await findBcli();
+  return new Promise((resolve, reject) => {
     const child = spawn(bcliPath, args, {
       stdio: ["pipe", "pipe", "pipe"],
     });
@@ -211,9 +213,9 @@ export async function performReauth(): Promise<void> {
   }
 }
 
-function doReauth(): Promise<void> {
-  return new Promise(async (resolve, reject) => {
-    const bcliPath = await findBcli();
+async function doReauth(): Promise<void> {
+  const bcliPath = await findBcli();
+  return new Promise((resolve, reject) => {
     const child = spawn(bcliPath, ["auth"], {
       stdio: "ignore",
       detached: false,

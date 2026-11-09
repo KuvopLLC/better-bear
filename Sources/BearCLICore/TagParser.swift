@@ -109,6 +109,25 @@ public enum TagParser {
         return result
     }
 
+    /// Indexed-tag list after removing one tag and adding another, as a
+    /// rename does. Removal runs first so that renaming a tag into its own
+    /// ancestor (`a/b` to `a`) keeps `a`: adding first saw `a` already
+    /// present, then the removal pruned it as an orphaned ancestor.
+    public static func indexedTagsAfterChange(
+        from strings: [String], adding: String? = nil, removing: String? = nil
+    ) -> [String] {
+        var result = strings
+        if let remove = removing {
+            result = remainingTagsAfterRemoval(from: result, removing: remove)
+        }
+        if let add = adding {
+            for t in expandAncestors([add]) where !result.contains(t) {
+                result.append(t)
+            }
+        }
+        return result
+    }
+
     /// Remove every occurrence of `#tagName` (or `#multi word tag#`) from a
     /// markdown body, honouring tag-boundary rules so that stripping `parent`
     /// does not truncate `#parent/child`. Collapses the adjacent space so the

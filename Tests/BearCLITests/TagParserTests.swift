@@ -345,3 +345,54 @@ final class TagParserRenamePrefixTests: XCTestCase {
         )
     }
 }
+
+final class TagParserRenameIndexTests: XCTestCase {
+
+    func testRenameIntoOwnParentKeepsParent() {
+        // `bcli tag rename dynatrace/notes dynatrace` used to leave the note
+        // with no indexed tags at all.
+        XCTAssertEqual(
+            TagParser.indexedTagsAfterChange(
+                from: ["dynatrace/notes", "dynatrace"],
+                adding: "dynatrace", removing: "dynatrace/notes"
+            ),
+            ["dynatrace"]
+        )
+    }
+
+    func testRenameIntoGrandparentKeepsGrandparent() {
+        XCTAssertEqual(
+            TagParser.indexedTagsAfterChange(
+                from: ["a/b/c", "a/b", "a"], adding: "a", removing: "a/b/c"
+            ),
+            ["a"]
+        )
+    }
+
+    func testRenameAcrossTreesDropsOldAncestors() {
+        XCTAssertEqual(
+            TagParser.indexedTagsAfterChange(
+                from: ["areas/health", "areas"], adding: "health", removing: "areas/health"
+            ),
+            ["health"]
+        )
+    }
+
+    func testRenameIntoNestedTagAddsAncestors() {
+        XCTAssertEqual(
+            TagParser.indexedTagsAfterChange(
+                from: ["purroxy"], adding: "projects/purroxy", removing: "purroxy"
+            ),
+            ["projects/purroxy", "projects"]
+        )
+    }
+
+    func testRenameKeepsSiblingSubtree() {
+        XCTAssertEqual(
+            TagParser.indexedTagsAfterChange(
+                from: ["a/b", "a/c", "a"], adding: "a", removing: "a/b"
+            ),
+            ["a/c", "a"]
+        )
+    }
+}
