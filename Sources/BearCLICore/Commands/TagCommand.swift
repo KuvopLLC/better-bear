@@ -384,17 +384,9 @@ private func buildTagMetadata(
         currentStrings = arr.compactMap { $0.stringValue }
     }
 
-    if let add = adding {
-        for t in TagParser.expandAncestors([add]) where !currentStrings.contains(t) {
-            currentStrings.append(t)
-        }
-    }
-
-    if let remove = removing {
-        currentStrings = TagParser.remainingTagsAfterRemoval(
-            from: currentStrings, removing: remove
-        )
-    }
+    currentStrings = TagParser.indexedTagsAfterChange(
+        from: currentStrings, adding: adding, removing: removing
+    )
 
     let nameToUUID = try await api.ensureTagsExist(names: currentStrings)
     let uuids = currentStrings.compactMap { nameToUUID[$0] }
